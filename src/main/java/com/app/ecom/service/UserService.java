@@ -1,43 +1,105 @@
 package com.app.ecom.service;
 
+import com.app.ecom.dto.AddressDto;
+import com.app.ecom.dto.UserRequest;
+import com.app.ecom.dto.UserResponse;
+import com.app.ecom.model.Address;
 import com.app.ecom.model.User;
-import lombok.Getter;
+import com.app.ecom.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
-    @Getter
-    private final List<User> users = new ArrayList<>(List.of(new User(1, "Rahul", "Sharma", "rahul1@example.com", "pass@123"), new User(2, "Aarav", "Verma", "aarav2@example.com", "pass@123"), new User(3, "Priya", "Mehta", "priya3@example.com", "pass@123"), new User(4, "Neha", "Singh", "neha4@example.com", "pass@123"), new User(5, "Karan", "Gupta", "karan5@example.com", "pass@123"), new User(6, "Sneha", "Reddy", "sneha6@example.com", "pass@123"), new User(7, "Vikram", "Patel", "vikram7@example.com", "pass@123"), new User(8, "Ananya", "Nair", "ananya8@example.com", "pass@123"), new User(9, "Rohit", "Yadav", "rohit9@example.com", "pass@123"), new User(10, "Meera", "Iyer", "meera10@example.com", "pass@123")));
-    private int id = 11;
-
-    public Optional<User> getUser(Integer id) {
-        return users.stream().filter(user -> user.getId().equals(id)).findFirst();
+    private UserRepository userRepository;
+    @Autowired
+    public void setUserRepository(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+    public Optional<UserResponse> getUser(Integer id) {
+        return userRepository.findById(id).map(
+                this::mapToUserResponse
+        );
     }
 
-    public User setUsers(User user) {
-        user.setId(id++);
-        users.add(user);
-        users.forEach(System.out::println);
-        return user;
+    public List<UserResponse> getUsers() {
+        return userRepository.findAll().stream().map(
+                this::mapToUserResponse
+        ).collect(Collectors.toList());
     }
 
-    public boolean updateUser(int id, User user) {
-        return users.stream().filter(user1 -> user1.getId()
-                        .equals(id))
-                .findFirst()
-                .map(excisting ->
-                {
-                    excisting.setPassword(user.getFirstName());
-                    excisting.setFirstName(user.getFirstName());
-                    excisting.setLastName(user.getLastName());
-                    excisting.setEmail(user.getEmail());
-                    excisting.setPassword(user.getPassword());
+    public UserResponse setUsers(UserRequest userRequest) {
+        User user = mapToUser(userRequest);
+        return mapToUserResponse(userRepository.save(user));
+    }
+
+    public boolean updateUser(int id, UserRequest userRequest) {
+        return userRepository.findById(id)
+                .map(existing -> {
+                    existing.setUsername(userRequest.getUsername());
+                    existing.setEmail(userRequest.getEmail());
+                    existing.setPassword(userRequest.getPassword());
+                    existing.setPhone(userRequest.getPhone());
+
+                    if (userRequest.getAddressDto() != null) {
+                        Address address = existing.getAddress();
+                        if (address == null) {
+                            address = new Address();
+                        }
+                        address.setStreet(userRequest.getAddressDto().getStreet());
+                        address.setCity(userRequest.getAddressDto().getCity());
+                        address.setState(userRequest.getAddressDto().getState());
+                        address.setCountry(userRequest.getAddressDto().getCountry());
+                        address.setZip(userRequest.getAddressDto().getZip());
+                        existing.setAddress(address);
+                    }
+
+                    userRepository.save(existing);
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
+    }
+    private UserResponse mapToUserResponse(User user) {
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(user.getId());
+        userResponse.setUsername(user.getUsername());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setPassword(user.getPassword());
+        userResponse.setPhone(user.getPhone());
+        userResponse.setRole(user.getRole());
+        if (user.getAddress() != null) {
+            AddressDto addressDto = new AddressDto();
+            addressDto.setCity(user.getAddress().getCity());
+            addressDto.setCountry(user.getAddress().getCountry());
+            addressDto.setZip(user.getAddress().getZip());
+            addressDto.setState(user.getAddress().getState());
+            addressDto.setStreet(user.getAddress().getStreet());
+            userResponse.setAddressDto(addressDto);
+        }
+        return userResponse;
+    }
 
+    private User mapToUser(UserRequest userRequest) {
+        User user = new User();
+        user.setUsername(userRequest.getUsername());
+        user.setEmail(userRequest.getEmail());
+        user.setPassword(userRequest.getPassword());
+        user.setPhone(userRequest.getPhone());
+
+        if (userRequest.getAddressDto() != null) {
+            Address address = new Address();
+            address.setStreet(userRequest.getAddressDto().getStreet());
+            address.setCity(userRequest.getAddressDto().getCity());
+            address.setState(userRequest.getAddressDto().getState());
+            address.setCountry(userRequest.getAddressDto().getCountry());
+            address.setZip(userRequest.getAddressDto().getZip());
+            user.setAddress(address);
+        }
+
+        return user;
     }
 }
