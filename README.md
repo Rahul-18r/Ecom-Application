@@ -1,7 +1,7 @@
 # Ecom-Application
 
 Basic Spring Boot backend for an e-commerce-style application.
-Right now, the project implements basic User and Product modules with DTO-based request/response mapping.
+Currently implements User, Product, and Cart modules with DTO-based request/response mapping.
 
 ## Tech Stack
 
@@ -18,8 +18,8 @@ The project follows a layered structure:
 
 - `controller` -> REST API endpoints
 - `service` -> business logic and data operations
-- `model` -> domain entities (`User`, `Address`, `Product`)
-- `dto` -> request/response DTOs
+- `model` -> domain entities (`User`, `Address`, `Product`, `CartItem`)
+- `dto` -> request/response DTOs (`UserRequest`, `UserResponse`, `ProductRequest`, `ProductResponse`, `CartItemRequest`)
 - `repository` -> Spring Data JPA repositories
 - `configure` -> reserved for application configuration (can be expanded)
 
@@ -60,6 +60,7 @@ Endpoints:
 
 - `GET /api/products` -> fetch all products
 - `GET /api/products/{id}` -> fetch one product by id
+- `GET /api/products/search?query=iphone` -> search products by name/description/category
 - `POST /api/products` -> create new product
 - `PUT /api/products/{id}` -> update existing product
 - `DELETE /api/products/{id}` -> delete product
@@ -77,6 +78,27 @@ Sample Request (Create Product):
   "active": true
 }
 ```
+
+### Cart API
+
+Endpoints:
+
+- `POST /api/cart` -> add item to cart (requires `X-User-ID` header)
+- `GET /api/cart/{userId}` -> retrieve user's cart
+- `DELETE /api/cart/{userId}/{productId}` -> remove item from cart
+
+Sample Request (Add to Cart):
+
+```json
+{
+  "productId": 1,
+  "productName": "iPhone 15",
+  "productPrice": 79999.99,
+  "productQuantity": 2
+}
+```
+
+**Note:** Include header `X-User-ID: user123` when making cart requests.
 
 ## Run Locally
 
@@ -112,6 +134,7 @@ curl -X POST http://localhost:8082/api/products -H "Content-Type: application/js
 
 - Add DTO validation (`@Valid`) and error handling
 - Add persistent database (MySQL/PostgreSQL)
-- Add cart and order modules
+- Add Order module
 - Add JWT authentication and role-based access
+- Add Swagger/Springdoc API documentation
 
